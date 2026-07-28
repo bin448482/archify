@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "订单快照 SQL 表级依赖",
+    "subtitle": "根据提供的 Mermaid 依赖关系整理；虚线关系表示 Codes 范围外的外部维度表",
+    "output": "examples/sql-table-dependency.html",
+    "quality_profile": "standard",
+    "viewBox": [2180, 1040],
+    "views": [
+      { "id": "reference-to-mid", "label": "参照表与中间层", "focus": ["brand", "ecom", "retail-mid", "ws-mid", "btq-snapshot", "tmall-bp"], "note": "品牌参照表驱动四条中间加工路径。" },
+      { "id": "boutique-dim", "label": "Boutique 维度", "focus": ["retail-mid", "ws-mid", "city", "btq", "btq-snapshot", "tmp-btq"], "note": "零售与 WS 中间表汇成 Boutique 维度；快照路径形成临时维度。" },
+      { "id": "order-output", "label": "订单明细到订单头", "focus": ["brand", "ecom", "tmp-btq", "tmall-bp", "staff", "article", "tmp-city", "order-item", "order-head"], "note": "核心订单明细汇总业务输入与外部维度，随后输出订单头。" }
+    ]
+  },
+  "components": [
+    { "id": "brand", "type": "database", "label": "dim_ref_brand_mapping", "sublabel": "dim_ref_brand_mapping.sql", "tag": "Layer 0", "pos": [370, 100], "size": [280, 78] },
+    { "id": "ecom", "type": "database", "label": "dim_ref_sales_ecom_channel", "sublabel": "dim_ref_sales_ecom_channel.sql", "tag": "Layer 0", "pos": [370, 245], "size": [280, 78] },
+    { "id": "retail-mid", "type": "backend", "label": "dim_dd_retail_btq_info_snapshot_mid", "sublabel": "Layer 1 intermediate", "tag": "Layer 1", "pos": [750, 70], "size": [320, 78] },
+    { "id": "ws-mid", "type": "backend", "label": "dim_dd_ws_pos_info_snapshot_mid", "sublabel": "Layer 1 intermediate", "tag": "Layer 1", "pos": [750, 190], "size": [320, 78] },
+    { "id": "btq-snapshot", "type": "backend", "label": "tmp_dim_dd_btq_info_snapshot", "sublabel": "Layer 1 intermediate", "tag": "Layer 1", "pos": [750, 390], "size": [320, 78] },
+    { "id": "tmall-bp", "type": "database", "label": "dwd_dd_tmall_order_bp_snapshot_df", "sublabel": "Layer 1 intermediate", "tag": "Layer 1", "pos": [750, 730], "size": [320, 78] },
+    { "id": "btq", "type": "database", "label": "dim_dd_btq_info", "sublabel": "Layer 2 dimension", "tag": "Layer 2", "pos": [1130, 130], "size": [270, 78] },
+    { "id": "tmp-btq", "type": "database", "label": "tmp_dim_dd_btq_info", "sublabel": "Layer 2 dimension", "tag": "Layer 2", "pos": [1130, 430], "size": [270, 78] },
+    { "id": "city", "type": "database", "label": "dim_ref_city_info", "sublabel": "external dimension", "tag": "External", "pos": [760, 900], "size": [220, 70] },
+    { "id": "tmp-city", "type": "database", "label": "tmp_dim_ref_city_info", "sublabel": "external dimension", "tag": "External", "pos": [1130, 900], "size": [250, 70] },
+    { "id": "staff", "type": "database", "label": "tmp_dim_hd_staff_info_pii", "sublabel": "external dimension", "tag": "External", "pos": [1460, 820], "size": [250, 70] },
+    { "id": "article", "type": "database", "label": "tmp_dim_pd_article_info", "sublabel": "external dimension", "tag": "External", "pos": [1460, 930], "size": [250, 70] },
+    { "id": "order-item", "type": "backend", "label": "dwd_dd_order_item_snapshot_df", "sublabel": "5 × mid_dwd_dd_order_item_* intermediate tables", "tag": "Layer 3 · core fact", "pos": [1510, 385], "size": [340, 96] },
+    { "id": "order-head", "type": "backend", "label": "dwd_dd_order_head_snapshot_df", "sublabel": "Layer 4 aggregate", "tag": "Layer 4", "pos": [1900, 385], "size": [240, 96] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Layer 0 · 基础维度", "wraps": ["brand", "ecom"], "pad": 34 },
+    { "kind": "region", "label": "Layer 1 · 中间表", "wraps": ["retail-mid", "ws-mid", "btq-snapshot", "tmall-bp"], "pad": 34 },
+    { "kind": "region", "label": "Layer 2 · 维度表", "wraps": ["btq", "tmp-btq"], "pad": 34 },
+    { "kind": "region", "label": "外部维度（不在 Codes）", "wraps": ["city", "tmp-city", "staff", "article"], "pad": 30 }
+  ],
+  "connections": [
+    { "id": "brand-retail-mid", "from": "brand", "to": "retail-mid", "variant": "emphasis" },
+    { "id": "brand-ws-mid", "from": "brand", "to": "ws-mid", "variant": "emphasis", "via": [[700, 139], [700, 229]] },
+    { "id": "brand-btq-snapshot", "from": "brand", "to": "btq-snapshot", "variant": "emphasis", "via": [[700, 139], [700, 429]] },
+    { "id": "brand-tmall-bp", "from": "brand", "to": "tmall-bp", "variant": "emphasis", "via": [[700, 139], [700, 769]] },
+    { "id": "retail-mid-btq", "from": "retail-mid", "to": "btq", "variant": "emphasis", "via": [[1100, 109], [1100, 169]] },
+    { "id": "ws-mid-btq", "from": "ws-mid", "to": "btq", "variant": "emphasis", "via": [[1100, 229], [1100, 169]] },
+    { "id": "city-btq", "from": "city", "to": "btq", "variant": "dashed", "fromSide": "right", "toSide": "left", "via": [[1085, 935], [1085, 169]] },
+    { "id": "btq-snapshot-tmp-btq", "from": "btq-snapshot", "to": "tmp-btq", "variant": "emphasis" },
+    { "id": "brand-order-item", "from": "brand", "to": "order-item", "variant": "dashed", "via": [[700, 55], [1460, 55], [1460, 433]] },
+    { "id": "ecom-order-item", "from": "ecom", "to": "order-item", "variant": "dashed", "via": [[700, 284], [1460, 284], [1460, 433]] },
+    { "id": "tmp-btq-order-item", "from": "tmp-btq", "to": "order-item", "variant": "emphasis", "via": [[1450, 469], [1450, 433]] },
+    { "id": "tmall-bp-order-item", "from": "tmall-bp", "to": "order-item", "variant": "emphasis", "via": [[1450, 769], [1450, 433]] },
+    { "id": "tmp-city-order-item", "from": "tmp-city", "to": "order-item", "variant": "dashed", "via": [[1430, 935], [1430, 433]] },
+    { "id": "staff-order-item", "from": "staff", "to": "order-item", "variant": "dashed", "via": [[1810, 855], [1810, 520], [1680, 520]] },
+    { "id": "article-order-item", "from": "article", "to": "order-item", "variant": "dashed", "via": [[1810, 965], [1810, 545], [1680, 545]] },
+    { "id": "order-item-order-head", "from": "order-item", "to": "order-head", "variant": "emphasis" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "图例", "items": ["实线：提供的 Mermaid 中的普通表依赖", "虚线：Mermaid 标注为外部、且不在 Codes 内的维度依赖", "节点标签为 SQL 输出表；不推断未提供的字段级或运行时关系"] }
+  ]
+}

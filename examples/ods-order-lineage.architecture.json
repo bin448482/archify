@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "订单快照表血缘架构",
+    "subtitle": "ODS 物理源表 → 参照与 Boutique 维度 → 五分支订单明细 → 订单头",
+    "output": "examples/ods-order-lineage.html",
+    "visual_preset": "blueprint",
+    "quality_profile": "standard",
+    "viewBox": [2200, 1100],
+    "views": [
+      {
+        "id": "sources-and-dimensions",
+        "label": "ODS 与参照维度",
+        "focus": ["ods_hq", "ods_c4c", "brand_mapping", "channel_mapping", "city_info", "tmp_city_info"],
+        "note": "87 张 ODS 源表先沉淀为品牌、渠道与城市参照。"
+      },
+      {
+        "id": "boutique-dimensions",
+        "label": "Boutique 维度组装",
+        "focus": ["retail_btq", "ws_pos", "btq_main", "btq_snapshot", "tmp_btq"],
+        "note": "零售、批发和快照路径分别形成可供订单明细关联的 Boutique 维度。"
+      },
+      {
+        "id": "order-item-assembly",
+        "label": "订单明细汇总",
+        "focus": ["branch_sap", "branch_online", "branch_offline", "branch_ric_ws", "branch_car_ws", "core_order_item"],
+        "note": "五个业务分支 UNION ALL 后，连接 Boutique、天猫及参照维度。"
+      },
+      {
+        "id": "order-head-output",
+        "label": "订单头输出",
+        "focus": ["core_order_item", "head_order", "ods_c4c"],
+        "note": "订单明细与 ods_dc_order_orders_pii 共同生成订单头快照。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "ods_hq",
+      "type": "database",
+      "label": "HQ 源表",
+      "sublabel": "26 张 · _bw_ · SAP · Gemini",
+      "tag": "ODS",
+      "pos": [70, 360],
+      "size": [210, 76]
+    },
+    {
+      "id": "ods_c4c",
+      "type": "database",
+      "label": "C4C 源表",
+      "sublabel": "61 张 · _dc_ · _rwf_ · _ccp_ · booster / warm / yext",
+      "tag": "ODS",
+      "pos": [70, 570],
+      "size": [210, 88]
+    },
+    {
+      "id": "brand_mapping",
+      "type": "database",
+      "label": "dim_ref_brand_mapping",
+      "sublabel": "HQ · 品牌映射",
+      "pos": [340, 100],
+      "size": [275, 72]
+    },
+    {
+      "id": "channel_mapping",
+      "type": "database",
+      "label": "dim_ref_sales_ecom_channel",
+      "sublabel": "HQ · 电商渠道参照",
+      "pos": [340, 225],
+      "size": [275, 72]
+    },
+    {
+      "id": "city_info",
+      "type": "database",
+      "label": "dim_ref_city_info",
+      "sublabel": "C4C · 城市参照",
+      "pos": [340, 690],
+      "size": [275, 72]
+    },
+    {
+      "id": "tmp_city_info",
+      "type": "database",
+      "label": "tmp_dim_ref_city_info",
+      "sublabel": "C4C · 城市参照暂存",
+      "pos": [340, 820],
+      "size": [275, 72]
+    },
+    {
+      "id": "retail_btq",
+      "type": "backend",
+      "label": "dim_dd_retail_btq_info_snapshot_mid",
+      "sublabel": "9 ODS + brand_mapping",
+      "tag": "Boutique",
+      "pos": [690, 98],
+      "size": [330, 76]
+    },
+    {
+      "id": "ws_pos",
+      "type": "backend",
+      "label": "dim_dd_ws_pos_info_snapshot_mid",
+      "sublabel": "13 ODS + brand_mapping",
+      "tag": "Boutique",
+      "pos": [690, 245],
+      "size": [330, 76]
+    },
+    {
+      "id": "btq_main",
+      "type": "backend",
+      "label": "dim_dd_btq_info",
+      "sublabel": "零售 + 批发中间层 + city_info",
+      "tag": "Boutique",
+      "pos": [1050, 170],
+      "size": [290, 82]
+    },
+    {
+      "id": "btq_snapshot",
+      "type": "backend",
+      "label": "tmp_dim_dd_btq_info_snapshot",
+      "sublabel": "27 ODS + brand_mapping + tmp_city",
+      "tag": "Boutique",
+      "pos": [690, 530],
+      "size": [330, 76]
+    },
+    {
+      "id": "tmp_btq",
+      "type": "backend",
+      "label": "tmp_dim_dd_btq_info",
+      "sublabel": "来自 BTQ Snapshot",
+      "tag": "Boutique",
+      "pos": [690, 650],
+      "size": [290, 76]
+    },
+    {
+      "id": "tmall_bp",
+      "type": "database",
+      "label": "dwd_dd_tmall_order_bp_snapshot_df",
+      "sublabel": "4 ODS + brand_mapping",
+      "tag": "上游订单",
+      "pos": [690, 840],
+      "size": [330, 76]
+    },
+    {
+      "id": "branch_sap",
+      "type": "backend",
+      "label": "① SAP Retail",
+      "sublabel": "3 ODS HQ",
+      "tag": "分支",
+      "pos": [1080, 360],
+      "size": [230, 66]
+    },
+    {
+      "id": "branch_online",
+      "type": "cloud",
+      "label": "② Online",
+      "sublabel": "8 ODS C4C",
+      "tag": "分支",
+      "pos": [1080, 460],
+      "size": [230, 66]
+    },
+    {
+      "id": "branch_offline",
+      "type": "cloud",
+      "label": "③ Offline",
+      "sublabel": "4 ODS C4C",
+      "tag": "分支",
+      "pos": [1080, 560],
+      "size": [230, 66]
+    },
+    {
+      "id": "branch_ric_ws",
+      "type": "messagebus",
+      "label": "④ RIC WS",
+      "sublabel": "4 ODS Mixed",
+      "tag": "分支",
+      "pos": [1080, 700],
+      "size": [230, 66]
+    },
+    {
+      "id": "branch_car_ws",
+      "type": "messagebus",
+      "label": "⑤ CAR WS",
+      "sublabel": "9 ODS Mixed",
+      "tag": "分支",
+      "pos": [1080, 800],
+      "size": [230, 66]
+    },
+    {
+      "id": "core_order_item",
+      "type": "backend",
+      "label": "dwd_dd_order_item_snapshot_df",
+      "sublabel": "5 分支 UNION ALL + 13 维度 JOIN",
+      "tag": "核心输出",
+      "pos": [1450, 510],
+      "size": [300, 88]
+    },
+    {
+      "id": "head_order",
+      "type": "backend",
+      "label": "dwd_dd_order_head_snapshot_df",
+      "sublabel": "CORE_TABLE + ods_dc_order_orders_pii",
+      "tag": "最终输出",
+      "pos": [1800, 510],
+      "size": [300, 88]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "ODS 物理源表（87 张）",
+      "wraps": ["ods_hq", "ods_c4c"],
+      "pad": 34
+    },
+    {
+      "kind": "region",
+      "label": "维度表 & 参照表",
+      "wraps": ["brand_mapping", "channel_mapping", "city_info", "tmp_city_info"],
+      "pad": 30
+    },
+    {
+      "kind": "region",
+      "label": "Boutique 组维度表",
+      "wraps": ["retail_btq", "ws_pos", "btq_main", "btq_snapshot", "tmp_btq"],
+      "pad": 30
+    },
+    {
+      "kind": "region",
+      "label": "其他上游表",
+      "wraps": ["tmall_bp"],
+      "pad": 30
+    },
+    {
+      "kind": "region",
+      "label": "核心表分支",
+      "wraps": ["branch_sap", "branch_online", "branch_offline", "branch_ric_ws", "branch_car_ws"],
+      "pad": 30
+    },
+    {
+      "kind": "region",
+      "label": "最终输出",
+      "wraps": ["core_order_item", "head_order"],
+      "pad": 30
+    }
+  ],
+  "connections": [
+    { "from": "ods_hq", "to": "brand_mapping", "variant": "dashed", "via": [[300, 398], [300, 136]] },
+    { "from": "ods_hq", "to": "channel_mapping", "variant": "dashed", "via": [[315, 398], [315, 261]] },
+    { "from": "ods_c4c", "to": "city_info", "variant": "dashed", "via": [[300, 614], [300, 726]] },
+    { "from": "ods_c4c", "to": "tmp_city_info", "variant": "dashed", "via": [[315, 614], [315, 856]] },
+
+    { "from": "brand_mapping", "to": "retail_btq", "variant": "dashed" },
+    { "from": "brand_mapping", "to": "ws_pos", "variant": "dashed", "via": [[650, 136], [650, 281]] },
+    { "from": "retail_btq", "to": "btq_main", "variant": "emphasis" },
+    { "from": "ws_pos", "to": "btq_main", "variant": "emphasis" },
+    { "from": "city_info", "to": "btq_main", "variant": "dashed", "via": [[650, 950], [1030, 950], [1030, 211]] },
+    { "from": "brand_mapping", "to": "btq_snapshot", "variant": "dashed", "via": [[650, 136], [650, 568]] },
+    { "from": "tmp_city_info", "to": "btq_snapshot", "variant": "dashed", "via": [[650, 856], [650, 568]] },
+    { "from": "btq_snapshot", "to": "tmp_btq", "variant": "emphasis" },
+    { "from": "brand_mapping", "to": "tmall_bp", "variant": "dashed", "via": [[650, 80], [650, 878]] },
+
+    { "from": "ods_hq", "to": "branch_sap", "variant": "emphasis", "via": [[1035, 398]] },
+    { "from": "ods_c4c", "to": "branch_online", "variant": "emphasis", "via": [[1040, 614], [1040, 493]] },
+    { "from": "ods_c4c", "to": "branch_offline", "variant": "emphasis", "via": [[1030, 614], [1030, 593]] },
+    { "from": "ods_hq", "to": "branch_ric_ws", "variant": "emphasis", "via": [[1025, 398], [1025, 733]] },
+    { "from": "ods_c4c", "to": "branch_ric_ws", "variant": "emphasis", "via": [[1040, 614], [1040, 733]] },
+    { "from": "ods_hq", "to": "branch_car_ws", "variant": "emphasis", "via": [[1025, 398], [1025, 833]] },
+    { "from": "ods_c4c", "to": "branch_car_ws", "variant": "emphasis", "via": [[1040, 614], [1040, 833]] },
+
+    { "from": "branch_sap", "to": "core_order_item", "variant": "emphasis" },
+    { "from": "branch_online", "to": "core_order_item", "variant": "emphasis" },
+    { "from": "branch_offline", "to": "core_order_item", "variant": "emphasis" },
+    { "from": "branch_ric_ws", "to": "core_order_item", "variant": "emphasis" },
+    { "from": "branch_car_ws", "to": "core_order_item", "variant": "emphasis" },
+    { "from": "tmp_btq", "to": "core_order_item", "variant": "dashed", "via": [[1380, 688], [1380, 554]] },
+    { "from": "tmall_bp", "to": "core_order_item", "variant": "dashed", "via": [[1380, 878], [1380, 554]] },
+    { "from": "brand_mapping", "to": "core_order_item", "variant": "dashed", "via": [[650, 55], [1380, 55], [1380, 554]] },
+    { "from": "channel_mapping", "to": "core_order_item", "variant": "dashed", "via": [[650, 335], [650, 55], [1380, 55], [1380, 554]] },
+    { "from": "city_info", "to": "core_order_item", "variant": "dashed", "via": [[650, 1020], [1380, 1020], [1380, 554]] },
+
+    { "from": "core_order_item", "to": "head_order", "variant": "emphasis" },
+    { "from": "ods_c4c", "to": "head_order", "variant": "dashed", "via": [[300, 614], [300, 1040], [1760, 1040], [1760, 554]] }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "源表范围",
+      "items": [
+        "HQ：26 张，覆盖 _bw_、SAP、Gemini",
+        "C4C：61 张，覆盖 _dc_、_rwf_、_ccp_ 等前缀",
+        "图中 ODS → 分支为逻辑输入关系；各分支的实际字段映射未在此图展开"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "核心汇总",
+      "items": [
+        "dwd_dd_order_item_snapshot_df：5 个分支 UNION ALL",
+        "再关联 13 个维度；图中展开了 Boutique、天猫和主要参照表",
+        "dwd_dd_order_head_snapshot_df 额外连接 ods_dc_order_orders_pii"
+      ]
+    }
+  ]
+}
