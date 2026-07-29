@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "NGSE Enterprise Lakehouse & AI Platform",
+    "subtitle": "ADLS Delta Lake physical layers, Unity Catalog governance for data and AI, data products and online prediction services",
+    "output": "examples/ngse-data-platform.architecture.html",
+    "quality_profile": "standard",
+    "viewBox": [2360, 1180],
+    "views": [
+      {
+        "id": "data-product-flow",
+        "label": "Data Product Spine",
+        "focus": ["business-systems", "engagement-systems", "partner-mdm", "oss", "adf", "databricks-workflows", "raw-delta", "transform-delta", "intermediate-delta", "governed-delta", "data-market", "bi", "ngse-web"],
+        "note": "ADF centralizes ingestion and scheduling; Databricks produces RAW, Transform, Governed, and Data Market products on ADLS Delta Lake."
+      },
+      {
+        "id": "ai-prediction-flow",
+        "label": "AI Prediction Service",
+        "focus": ["governed-delta", "dna-feature-store", "ml-pipelines", "model-registry", "model-serving", "ngse-api", "api-management", "ngse-web", "business-apps"],
+        "note": "Governed facts and dimensions feed DNA; approved models are served online through Model Serving and API Management."
+      }
+    ]
+  },
+  "components": [
+    { "id": "identity", "type": "security", "label": "Identity & Access", "sublabel": "Entra ID · Service Principals · RBAC", "tag": "Platform control", "pos": [50, 55], "size": [270, 74] },
+    { "id": "unity-catalog", "type": "security", "label": "Unity Catalog", "sublabel": "Catalog / Schema · Access Control · Lineage · External Locations · Model Governance", "tag": "Data & AI governance control plane", "pos": [390, 55], "size": [800, 74] },
+    { "id": "platform-ops", "type": "backend", "label": "Platform Operations", "sublabel": "CI/CD · Azure Monitor · Cost · Audit · Secrets", "tag": "DataOps / MLOps", "pos": [1260, 55], "size": [570, 74] },
+
+    { "id": "business-systems", "type": "database", "label": "Core Business Systems", "sublabel": "CRM · SAP · LIMS", "tag": "Operational sources", "pos": [50, 250], "size": [230, 76] },
+    { "id": "engagement-systems", "type": "frontend", "label": "Customer & Learning Touchpoints", "sublabel": "Touch Points · Weixin · Learning", "tag": "Engagement sources", "pos": [50, 360], "size": [230, 76] },
+    { "id": "partner-mdm", "type": "database", "label": "Partners & MDM", "sublabel": "Distributor Data · MDM SQL Server", "tag": "Master / partner data", "pos": [50, 470], "size": [230, 76] },
+    { "id": "oss", "type": "cloud", "label": "OSS File Data", "sublabel": "Parquet File Sources", "tag": "File source", "pos": [50, 580], "size": [230, 76] },
+    { "id": "adf", "type": "backend", "label": "Azure Data Factory", "sublabel": "Ingestion, orchestration, scheduling and run monitoring", "tag": "Orchestration", "pos": [340, 405], "size": [230, 88] },
+    { "id": "databricks-workflows", "type": "backend", "label": "Databricks Workflows", "sublabel": "Jobs · Notebooks · Delta Processing", "tag": "Compute plane", "pos": [620, 405], "size": [230, 88] },
+
+    { "id": "raw-delta", "type": "database", "label": "RAW Delta Tables", "sublabel": "Source-aligned landed data", "tag": "ADLS · Bronze", "pos": [900, 340], "size": [210, 80] },
+    { "id": "transform-delta", "type": "database", "label": "Transform Delta Tables", "sublabel": "Standardized and controlled data", "tag": "ADLS · Silver", "pos": [1160, 340], "size": [230, 80] },
+    { "id": "intermediate-delta", "type": "database", "label": "Intermediate Delta Tables", "sublabel": "Temporary tables for complex subjects", "tag": "ADLS · Optional", "pos": [1780, 500], "size": [230, 80] },
+    { "id": "governed-delta", "type": "database", "label": "Governed Delta Tables", "sublabel": "Curated fact and dimension tables", "tag": "ADLS · Curated", "pos": [1510, 340], "size": [230, 80] },
+    { "id": "data-market", "type": "database", "label": "Data Market", "sublabel": "Aggregated analytical data products", "tag": "Serving data product", "pos": [1790, 340], "size": [210, 80] },
+
+    { "id": "bi", "type": "frontend", "label": "BI & Analytics", "sublabel": "Metrics, reports and self-service analysis", "tag": "Consumer", "pos": [2050, 230], "size": [220, 74] },
+    { "id": "ngse-web", "type": "frontend", "label": "NGSE Web", "sublabel": "Data product and prediction consumer", "tag": "Consumer", "pos": [2050, 343], "size": [220, 74] },
+    { "id": "business-apps", "type": "external", "label": "Business Applications", "sublabel": "Business API and prediction consumer", "tag": "Consumer", "pos": [2050, 450], "size": [220, 74] },
+
+    { "id": "clean", "type": "backend", "label": "Clean & Standardize", "sublabel": "Cleansing, standardization and transformation", "tag": "Data Trust", "pos": [970, 610], "size": [210, 72] },
+    { "id": "masking", "type": "security", "label": "PII Masking", "sublabel": "Data masking and sensitive-data controls", "tag": "Data Trust", "pos": [1230, 610], "size": [210, 72] },
+    { "id": "quality", "type": "security", "label": "Data Quality Rules", "sublabel": "Business rules, completeness and consistency", "tag": "Data Trust", "pos": [1230, 710], "size": [210, 72] },
+    { "id": "monitoring", "type": "backend", "label": "Observability & Alerting", "sublabel": "Run monitoring, anomaly alerting and notification", "tag": "Data Trust", "pos": [970, 710], "size": [210, 72] },
+    { "id": "upstream-owners", "type": "external", "label": "Upstream Systems & Data Owners", "sublabel": "Receive data-quality incident notifications", "tag": "Alert target", "pos": [970, 825], "size": [210, 72] },
+
+    { "id": "dna-feature-store", "type": "backend", "label": "DNA / Feature Store", "sublabel": "Governed and intermediate features / training data", "tag": "ADLS · AI data product", "pos": [1780, 610], "size": [230, 80] },
+    { "id": "ml-pipelines", "type": "backend", "label": "ML Pipelines", "sublabel": "Training, evaluation, validation and model creation", "tag": "MLOps", "pos": [1790, 720], "size": [210, 80] },
+    { "id": "model-registry", "type": "database", "label": "Model Registry", "sublabel": "Versions, metadata and approval", "tag": "MLOps", "pos": [1790, 830], "size": [210, 80] },
+    { "id": "operational-sql", "type": "database", "label": "Operational SQL", "sublabel": "NGSE business data store", "tag": "Application data", "pos": [1230, 940], "size": [230, 80] },
+    { "id": "ngse-api", "type": "backend", "label": "NGSE Prediction API", "sublabel": "Business API and prediction orchestration", "tag": "Application", "pos": [1510, 940], "size": [210, 80] },
+    { "id": "model-serving", "type": "backend", "label": "Model Serving", "sublabel": "Online inference, prediction and monitoring", "tag": "MLOps", "pos": [1790, 940], "size": [210, 80] },
+    { "id": "api-management", "type": "security", "label": "API Management", "sublabel": "Security, policies and auditing for all inbound and outbound APIs", "tag": "Integration gateway", "pos": [2050, 790], "size": [220, 80] },
+
+    { "id": "domain-config", "type": "backend", "label": "Business Domain Configuration", "sublabel": "Source, owner, keys, schedule and target tables", "tag": "Pipeline factory", "pos": [350, 550], "size": [370, 62] },
+    { "id": "ingestion-strategy", "type": "backend", "label": "Full Load / Incremental / CDC", "sublabel": "Watermarks, change rules, backfill and replay", "tag": "Ingestion strategy", "pos": [350, 640], "size": [370, 62] },
+    { "id": "domain-adf", "type": "backend", "label": "ADF Orchestration", "sublabel": "Trigger and parameterize", "tag": "Domain pipeline", "pos": [350, 730], "size": [175, 64] },
+    { "id": "domain-databricks", "type": "backend", "label": "Databricks Domain Pipeline", "sublabel": "Load to RAW / Transform", "tag": "Domain pipeline", "pos": [550, 730], "size": [175, 64] },
+    { "id": "sync-audit", "type": "database", "label": "Sync Audit & Reconciliation", "sublabel": "Periodic counts, checksums, watermark and source-to-target checks", "tag": "Pipeline audit Delta", "pos": [350, 820], "size": [370, 62] },
+    { "id": "increment-ops", "type": "security", "label": "Increment Statistics, SLA & Exceptions", "sublabel": "Insert/update/delete metrics, lag, alerts and replay", "tag": "Pipeline operations", "pos": [350, 910], "size": [370, 62] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Platform Control Plane", "wraps": ["identity", "unity-catalog", "platform-ops"], "pad": 24 },
+    { "kind": "region", "label": "Business & Partner Data Sources", "wraps": ["business-systems", "engagement-systems", "partner-mdm", "oss"], "pad": 26 },
+    { "kind": "region", "label": "ADLS Gen2 Delta Lakehouse - physical storage", "wraps": ["raw-delta", "transform-delta", "intermediate-delta", "governed-delta", "data-market", "dna-feature-store"], "pad": 32 },
+    { "kind": "region", "label": "Data Trust Pipeline - Transform internal controls", "wraps": ["clean", "masking", "quality", "monitoring"], "pad": 24 },
+    { "kind": "region", "label": "MLOps - train, register and serve", "wraps": ["dna-feature-store", "ml-pipelines", "model-registry", "model-serving"], "pad": 28 },
+    { "kind": "region", "label": "NGSE Application", "wraps": ["operational-sql", "ngse-api"], "pad": 26 },
+    { "kind": "region", "label": "Business Pipeline Factory", "wraps": ["domain-config", "ingestion-strategy", "domain-adf", "domain-databricks", "sync-audit", "increment-ops"], "pad": 22 }
+  ],
+  "connections": [
+    { "id": "business-adf", "from": "business-systems", "to": "adf", "variant": "emphasis", "via": [[305, 288], [305, 449]] },
+    { "id": "engagement-adf", "from": "engagement-systems", "to": "adf", "variant": "emphasis", "via": [[305, 398], [305, 449]] },
+    { "id": "partner-adf", "from": "partner-mdm", "to": "adf", "variant": "emphasis", "via": [[305, 508], [305, 449]] },
+    { "id": "oss-adf", "from": "oss", "to": "adf", "label": "Parquet", "labelAt": [325, 600], "variant": "emphasis", "via": [[305, 618], [305, 449]] },
+    { "id": "adf-workflows", "from": "adf", "to": "databricks-workflows", "label": "schedule jobs", "labelAt": [595, 508], "variant": "emphasis" },
+    { "id": "adf-raw", "from": "adf", "to": "raw-delta", "label": "land to ADLS", "labelAt": [760, 280], "variant": "emphasis", "fromSide": "top", "toSide": "left", "via": [[455, 300], [870, 300]] },
+    { "id": "raw-transform", "from": "raw-delta", "to": "transform-delta", "label": "Delta processing", "labelAt": [1135, 433], "variant": "emphasis" },
+    { "id": "transform-governed", "from": "transform-delta", "to": "governed-delta", "label": "standard subject", "labelAt": [1450, 433], "variant": "emphasis" },
+    { "id": "transform-intermediate", "from": "transform-delta", "to": "intermediate-delta", "label": "complex subject", "labelAt": [1600, 620], "variant": "emphasis", "fromSide": "bottom", "toSide": "bottom", "via": [[1275, 600], [1895, 600]] },
+    { "id": "intermediate-governed", "from": "intermediate-delta", "to": "governed-delta", "label": "publish curated tables", "labelAt": [1700, 500], "variant": "emphasis", "fromSide": "left", "toSide": "bottom" },
+    { "id": "intermediate-market", "from": "intermediate-delta", "to": "data-market", "label": "complex aggregates", "labelAt": [1960, 465], "variant": "emphasis", "fromSide": "top", "toSide": "bottom" },
+    { "id": "clean-masking", "from": "clean", "to": "masking", "label": "sensitive data", "labelAt": [1205, 700], "variant": "security" },
+    { "id": "masking-quality", "from": "masking", "to": "quality", "label": "validate", "labelAt": [1465, 700], "variant": "security", "fromSide": "bottom", "toSide": "top" },
+    { "id": "quality-monitoring", "from": "quality", "to": "monitoring", "label": "quality events", "labelAt": [1205, 800], "variant": "emphasis" },
+    { "id": "monitoring-alert", "from": "monitoring", "to": "upstream-owners", "label": "notify", "labelAt": [1075, 805], "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "governed-market", "from": "governed-delta", "to": "data-market", "label": "aggregate & publish", "labelAt": [1765, 433], "variant": "emphasis" },
+    { "id": "market-bi", "from": "data-market", "to": "bi", "label": "analytics", "labelAt": [2025, 290], "variant": "emphasis", "fromSide": "right", "toSide": "left", "via": [[2025, 380], [2025, 267]] },
+    { "id": "market-web", "from": "data-market", "to": "ngse-web", "label": "data product", "labelAt": [2025, 440], "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "uc-raw", "from": "unity-catalog", "to": "raw-delta", "variant": "security", "fromSide": "bottom", "toSide": "top", "via": [[1005, 180]] },
+    { "id": "uc-transform", "from": "unity-catalog", "to": "transform-delta", "variant": "security", "fromSide": "bottom", "toSide": "top", "via": [[1275, 180]] },
+    { "id": "uc-governed", "from": "unity-catalog", "to": "governed-delta", "variant": "security", "fromSide": "bottom", "toSide": "top", "via": [[1630, 180]] },
+    { "id": "uc-market", "from": "unity-catalog", "to": "data-market", "variant": "security", "fromSide": "bottom", "toSide": "top", "via": [[1895, 180]] },
+    { "id": "uc-intermediate", "from": "unity-catalog", "to": "intermediate-delta", "variant": "security", "fromSide": "bottom", "toSide": "right", "via": [[2300, 180], [2300, 540]] },
+    { "id": "intermediate-dna", "from": "intermediate-delta", "to": "dna-feature-store", "label": "tmp features", "labelAt": [2070, 595], "variant": "emphasis", "fromSide": "right", "toSide": "right", "via": [[2050, 540], [2050, 650]] },
+    { "id": "dna-ml", "from": "dna-feature-store", "to": "ml-pipelines", "label": "features / training data", "labelAt": [1975, 705], "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "id": "ml-registry", "from": "ml-pipelines", "to": "model-registry", "label": "register model", "labelAt": [1975, 815], "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "id": "registry-serving", "from": "model-registry", "to": "model-serving", "label": "deploy approved version", "labelAt": [1975, 925], "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "id": "serving-api", "from": "model-serving", "to": "ngse-api", "label": "online prediction", "labelAt": [1755, 1030], "variant": "emphasis", "fromSide": "left", "toSide": "right" },
+    { "id": "api-sql", "from": "ngse-api", "to": "operational-sql", "label": "business read / write", "labelAt": [1485, 1030], "variant": "emphasis" },
+    { "id": "api-gateway", "from": "ngse-api", "to": "api-management", "label": "secure API", "labelAt": [1930, 1060], "variant": "emphasis", "fromSide": "bottom", "toSide": "bottom", "via": [[1615, 1050], [2160, 1050]] }
+    ,{ "id": "config-strategy", "from": "domain-config", "to": "ingestion-strategy", "variant": "dashed", "fromSide": "bottom", "toSide": "top" }
+    ,{ "id": "strategy-domain-adf", "from": "ingestion-strategy", "to": "domain-adf", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "via": [[535, 720], [437, 720]] }
+    ,{ "id": "domain-adf-databricks", "from": "domain-adf", "to": "domain-databricks", "variant": "emphasis" }
+    ,{ "id": "domain-pipeline-audit", "from": "domain-databricks", "to": "sync-audit", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "via": [[637, 812], [535, 812]] }
+    ,{ "id": "audit-increment-ops", "from": "sync-audit", "to": "increment-ops", "variant": "dashed", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Lakehouse Data Spine", "items": ["ADF centralizes source ingestion, lands RAW Delta Tables, and schedules Databricks Workflows.", "ADLS Gen2 is the physical storage foundation; RAW, Transform, Intermediate, Governed, Data Market, and DNA use Delta Tables.", "Intermediate holds temporary tables for complex subjects, supplying complex aggregates to Data Market and temporary features to DNA."] },
+    { "dot": "emerald", "title": "Trust, Governance & Operations", "items": ["Unity Catalog governs data and AI assets: external locations, catalogs and schemas, access, lineage, and models.", "Transform completes cleansing, PII masking, data quality, monitoring, and upstream incident notifications.", "API Management centralizes security policies, auditing, and publishing for inbound and outbound APIs."] },
+    { "dot": "rose", "title": "Business Pipeline Factory", "items": ["Business-domain configuration defines sources, owners, keys, schedules, and target tables.", "Pipelines support full load, watermark-based incremental ingestion, CDC, backfill, and replay.", "Sync audits, reconciliation, incremental metrics, SLA monitoring, and exception alerts provide operational control."] }
+  ]
+}
