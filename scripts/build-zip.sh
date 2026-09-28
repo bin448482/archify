@@ -5,44 +5,40 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 out="${1:-$repo_root/archify.zip}"
-if [[ "$out" != /* ]]; then
-  out="$(pwd)/$out"
-fi
 
-# Stage a clean copy: node_modules never ships; test/ is repo-only (the golden
-# harness compares against ../examples at the repo root, which does not exist
-# in an installed skill); local agent coordination folders are also excluded so
-# a developer's working tree cannot leak into the distributable archive. The npm
-# scripts and build-only dependencies are stripped from the shipped
-# package.json. Runtime schema validation is provided by the committed
-# standalone validators, so installing the skill never requires npm install.
-stage="$(mktemp -d)"
-trap 'rm -rf "$stage"' EXIT
-if [[ ! -f "$repo_root/archify/renderers/shared/generated-validators.mjs" ]]; then
-  echo 'generated validators are missing — run npm run generate:validators in archify/' >&2
+# Reject unsafe raw output spellings before the canonical-toolchain gate so
+# every maintained Node lane exercises the same shared native path grammar.
+# This validation-only mode is read-only and does not create parent paths.
+node "$repo_root/scripts/write-deterministic-zip.mjs" --validate-output "$out"
+
+# Runtime consumers support every Node version declared by archify/package.json,
+# but canonical ZIP bytes depend on the Node/zlib toolchain. CI and releases use
+# official Node 22 with its bundled zlib. Distributions linked against a system
+# zlib can produce different bytes even at the same Node version.
+canonical_node_major=22
+canonical_zlib_version=1.3.1-e00f703
+node_version="$(node -p 'process.versions.node')"
+node_major="${node_version%%.*}"
+zlib_version="$(node -p 'process.versions.zlib')"
+if [[ "$node_major" != "$canonical_node_major" || "$zlib_version" != "$canonical_zlib_version" ]]; then
+  echo "canonical archify.zip builds require Node $canonical_node_major with bundled zlib $canonical_zlib_version (current: Node $node_version, zlib $zlib_version)" >&2
+  echo "Use an official Node.js 22 distribution with the required bundled zlib on PATH; diagram runtime support is unchanged." >&2
   exit 1
 fi
-rsync -a \
-  --exclude 'node_modules' \
-  --exclude 'test' \
-  --exclude 'scripts/generate-validators.mjs' \
-  --exclude '.DS_Store' \
-  --exclude '.hive' \
-  --exclude '.workbuddy' \
-  --exclude '.validator-check-*' \
-  "$repo_root/archify/" "$stage/archify/"
-node -e "
-  const fs = require('fs');
-  const p = '$stage/archify/package.json';
-  const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
-  delete pkg.scripts;
-  delete pkg.devDependencies;
-  fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
-"
-rm -f "$stage/archify/package-lock.json"
 
-rm -f "$out"
-(cd "$stage" && zip -r -X -q "$out" archify)
+# The shared stager owns tracked-only selection, index modes, conflict and
+# symlink rejection, repository-only exclusions, and package.json cleanup for
+# both the ZIP and DeepSeek Harness tarball.
+stage="$(mktemp -d)"
+trap 'rm -rf "$stage"' EXIT
+node "$repo_root/scripts/stage-clean-skill.mjs" \
+  --root "$repo_root" \
+  --dest "$stage/archify" \
+  --mode-manifest "$stage/modes.json" >/dev/null
 
-unzip -l "$out" | tail -1
+# Entry modes come from the recorded Git index modes, not from stat(), so the
+# archive bytes do not depend on the building platform's permission support.
+node "$repo_root/scripts/write-deterministic-zip.mjs" "$stage/archify" "$out" \
+  --mode-manifest "$stage/modes.json"
+
 echo "built $out"

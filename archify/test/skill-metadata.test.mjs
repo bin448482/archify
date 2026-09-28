@@ -7,6 +7,9 @@ import assert from 'node:assert/strict';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.join(here, '..');
 const skill = readFileSync(path.join(skillRoot, 'SKILL.md'), 'utf8');
+const defaults = readFileSync(path.join(skillRoot, 'references', 'authoring-defaults.md'), 'utf8');
+const updateAwareness = readFileSync(path.join(skillRoot, 'references', 'update-awareness.md'), 'utf8');
+const authoringContract = readFileSync(path.join(skillRoot, 'references', 'authoring-contract.md'), 'utf8');
 const frontmatter = skill.match(/^---\n([\s\S]*?)\n---/);
 
 test('skill description is portable across 1024-character runtimes and remains searchable', () => {
@@ -45,4 +48,39 @@ test('main skill stays a bounded authoring router with progressive references', 
     assert.match(skill, new RegExp(reference.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
     assert.equal(existsSync(path.join(skillRoot, reference)), true, `${reference} must ship with the skill`);
   }
+});
+
+test('update awareness is notification-only and never replaces the requested workflow', () => {
+  assert.match(skill + updateAwareness, /`finalize` and standalone `deliver` include `update`/);
+  assert.match(skill + updateAwareness, /`update\.noticeRequired`[\s\S]*final response/i);
+  assert.match(skill + updateAwareness, /several diagrams[\s\S]*once in the final response/i);
+  assert.match(skill + updateAwareness, /information, not permission/i);
+  assert.match(skill, /Snooze or ignore a reminder only when the user explicitly asks/);
+  assert.match(updateAwareness, /explicitly asks to pause or stop[\s\S]*--snooze "<eventKey>"[\s\S]*--ignore "<eventKey>"[\s\S]*Never run them on your own initiative/);
+  assert.match(skill + updateAwareness, /installed Skill has not changed/i);
+  assert.doesNotMatch(skill, /npx skills update|gh skill update/i);
+});
+
+test('language behavior stays within the bounded locale contract', () => {
+  assert.match(defaults, /one primary authored language/);
+  assert.match(defaults, /user's choice or the request\/conversation/);
+  assert.match(defaults, /English \(`en`\) or Simplified Chinese \(`zh-CN`\)/);
+  assert.match(defaults, /meta\.translations/);
+  assert.match(defaults, /exact product, code, protocol, command, API, and environment names/);
+  assert.match(defaults, /Language consistency\]\(authoring-contract\.md#language-consistency\)/);
+  assert.match(authoringContract, /`meta\.locale` controls only renderer-owned reader surfaces/);
+  assert.match(authoringContract, /every other `meta\.locale`, also set `meta\.translations`/);
+  assert.match(authoringContract, /Reuse suitable translations/);
+  assert.match(authoringContract, /artifact is\s+not fully localized/);
+  assert.match(authoringContract, /Do not silently substitute\s+`zh-CN` for another language or Chinese locale/);
+  assert.match(authoringContract, /It never translates authored content/);
+  assert.match(authoringContract, /Renderer-owned default legend labels follow `meta\.locale`/);
+  assert.match(authoringContract, /The fallback\s+applies only to renderer-owned surfaces/);
+});
+
+test('skill keeps the title hierarchy compact by default', () => {
+  assert.match(defaults, /`meta\.subtitle` for a title-only header/);
+  assert.match(defaults, /Explicit styles and a subtitle require a user request/);
+  assert.match(authoringContract, /never use it to restate the title, nodes, edges,\s+or cards/);
+  assert.match(authoringContract, /omitted or blank subtitle must not leave an empty visual row/);
 });

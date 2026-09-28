@@ -51,7 +51,8 @@ test('semantic zoom exposes MAP, READ, and FULL at deterministic thresholds', ()
   assert.match(html, /if \(state\.scale >= 1\) return 'read'/);
   assert.match(html, /return 'map'/);
   assert.match(html, /container\.setAttribute\('data-detail-level', detail\)/);
-  assert.match(html, /detail === 'map' \? 'MAP ' : detail === 'read' \? 'READ ' : 'FULL '/);
+  assert.match(html, /var levelLabel = viewerText\('viewer\.nav\.level\.' \+ detail\)/);
+  assert.match(html, /var resolvedLevel = semantic \? viewerText\('viewer\.nav\.level\.auto'\) : levelLabel/);
   assert.match(html, /Zoom in to reveal relationship labels and node context/);
   assert.match(html, /Zoom in again to reveal tags and annotations/);
   assert.match(html, /Full diagram detail/);
@@ -66,7 +67,6 @@ test('reading depth stays quiet at overview and yields to semantic intent', () =
   assert.match(html, /svg\[data-focus-active\] \[data-focus-match\] \[data-detail\]/);
   assert.match(html, /svg\[data-intent-trace-active\] \[data-intent-trace-match\] \[data-detail\]/);
   assert.match(html, /svg\[data-route-active\] \[data-route-match\] \[data-detail\]/);
-  assert.match(html, /svg\[data-story-active\] \[data-story-step\] \[data-detail\]/);
   assert.match(html, /svg\[data-relationship-preview-active\] \[data-relationship-preview\] \[data-detail\]/);
 });
 

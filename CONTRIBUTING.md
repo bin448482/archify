@@ -1,71 +1,139 @@
 # Contributing to Archify
 
-Thank you for helping Archify make engineering diagrams more trustworthy and useful. Stability comes before feature count: small reproductions, explicit contracts, and evidence-backed changes are easier to review and safer to ship.
+Archify is Agent-first: people describe systems, and the Skill, typed JSON, renderers, validators, and delivery receipts produce reproducible diagrams. Keep each contribution focused on one user-visible behavior or one tightly related delivery slice. Maintainers and Agents reviewing a PR or a revised head follow [Reviewing](REVIEWING.md).
 
 ## Choose the right path
 
-- Found a renderer, validator, package, or viewer problem? Use [the bug report form](.github/ISSUE_TEMPLATE/bug-report.yml).
-- Made a useful real-world diagram? Use [the showcase form](.github/ISSUE_TEMPLATE/showcase.yml).
-- Want to change behavior? Open or link an issue before a broad refactor so the contract and non-goals are clear.
-- Found a security vulnerability? Do not open a public reproduction containing exploit details or secrets; use GitHub's private security reporting for this repository.
+- Renderer, validator, package, or Viewer defect: use the [bug report form](.github/ISSUE_TEMPLATE/bug-report.yml).
+- Reproducible real-world diagram: use the [showcase form](.github/ISSUE_TEMPLATE/showcase.yml).
+- New schema fields, defaults, acceptance rules, installation/export contracts, or broad product behavior: agree on value, compatibility, and non-goals before substantial implementation. Link the issue or recorded maintainer decision; reuse an existing agreed scope.
+- Narrow fixes and small documentation or test corrections can proceed with a concrete reproduction or rationale; a separate planning issue is unnecessary.
+- Security vulnerabilities: follow [SECURITY.md](SECURITY.md).
 
-Do not include secrets, access tokens, credentials, private repository content, personal data, or customer data in prompts, JSON fixtures, logs, screenshots, or generated artifacts.
+Do not include secrets, access tokens, credentials, private repository content, personal data, or customer data in fixtures, logs, screenshots, artifacts, or package tests.
 
-## Local setup
+## Prepare a reviewable change
 
-The renderer package lives in `archify/` and supports Node.js 20 and 22.
+Start from the latest `dev` and target `dev` for fixes and features. Check whether its existing controls already solve the reported case. Record the comparison base and candidate head.
 
-```bash
+Use Draft for unresolved scope or early implementation feedback. At this stage, provide the smallest reproduction and relevant checks. Prepare broad integration evidence and generated artifacts once the approach is settled.
+
+Before requesting final review, explain:
+
+- The current-base trigger, intended outcome, and why the benefit justifies the implementation and ongoing maintenance cost.
+- The changed behavior and shared callers, existing behavior that must remain stable, and any intended compatibility changes.
+- The applicable checks, actual results, and reproducible evidence links.
+
+Use [the PR template](.github/PULL_REQUEST_TEMPLATE.md); link existing receipts or CI output instead of transcribing long logs. Classify impact by behavior and callers, not file extension or diff size.
+
+## Choose evidence by impact
+
+| Impact | Typical change | Evidence to prepare |
+| --- | --- | --- |
+| Text or review policy | Explanatory prose, links, contributor/reviewer procedure | Check content, links, and consistency with affected templates or automation. No local renderer suite for repository-only prose. |
+| Local behavior | One CLI path, focused test correction | Reproduction or rationale, affected tests, and relevant failure/compatibility cases. |
+| Shared behavior | Geometry, text measurement, shared Viewer, evidence or delivery helpers | Trace callers; identify affected modes and contracts; compare fixed representative inputs on base and candidate, including relevant historical failures. |
+| Contract change | Schema, defaults, validation acceptance, Skill or authoring instructions | Agreed scope and explicit allowed/preserved behavior, plus local/shared evidence appropriate to the implementation. |
+
+Skill instructions, authored examples, build inputs, and generated-site sources are behavioral inputs even when they look like documentation. Policy changes need process review; runtime evidence depends on whether they affect runtime inputs.
+
+Start with focused checks for the affected behavior. Use the full `npm test` suite from `archify/` when shared behavior, broad changes, or findings require wider coverage. Final review needs sufficient evidence for the impact above; relevant CI results can supply that coverage without repeating the same run locally. Identify the revision and coverage of reused results, and explain material gaps. Required remote CI and branch protection still apply.
+
+### Documentation-only CI
+
+Pull requests changing only `README.md`, `README_EN.md`, `README_ZH.md`, or PNG/SVG files directly under `docs/assets/community/` run the existing README checks once on Node 22. Required CI job names remain present, but their unrelated runtime, browser, and package steps do not run. A failed scope classification or README check fails those required jobs.
+
+Any other changed path (including tests, Skill instructions, templates, generated diagrams, dependencies, and workflow configuration) keeps full CI. Empty change sets also use full CI. Pushes to `main` always run the complete suite. New pushes cancel obsolete CI runs for the same PR; main runs are not cancelled.
+
+## Product and compatibility contracts
+
+- Existing schema-v1 typed JSON remains valid unless a reviewed change explicitly introduces a breaking rule and migration path.
+- Preserve authored topology and intent; explicit geometry remains authoritative unless the contract says otherwise. Consult the [authoring contract](archify/references/authoring-contract.md) and relevant renderer documentation for details.
+- `standard` preserves broad compatibility. A new `showcase` failure must identify a real, repairable defect and avoid rejecting necessary routing.
+- Agent-facing failures belong in `diagnostics[]`: use a stable `code`, precise `subject`, concrete `evidence`, and executable `supportedFixes`. Preserve non-zero CLI exits and machine-readable receipts for failed stages.
+- A validation rule expressing taste should begin with evidence or a warning. Before making it a hard error, check legitimate obstacles, shared ports, explicit routes, nested boundaries, and existing examples.
+- Keep one canonical contract per behavior. Link the existing source instead of copying CLI stages, receipt fields, or error tables.
+
+## Local setup and verification
+
+The renderer package is in `archify/`; its Node range and commands are defined in `archify/package.json`.
+
+```sh
 cd archify
 npm ci
 npm test
 ```
 
-During development, run the narrowest relevant test first, then the full suite before opening a pull request. Behavioral fixes should include a failing regression test that demonstrates the problem before the implementation changes.
+Test through public behavior such as `render`, `validate`, `deliver`, `visual-check`, or final SVG/HTML. Behavioral fixes should include a regression that demonstrates the original failure. Private helper checks can supplement that evidence.
 
-## Bug fixes
+For geometry and layout changes, use the smallest redacted JSON reproduction, relevant checked-in examples, and frozen compatibility fixtures. Compare base and candidate with the same input and browser conditions. Identify intended changes and investigate unexpected ones; updating golden files alone does not establish visual or compatibility acceptance.
 
-A useful bug report contains:
+A visual PR must provide enough evidence to evaluate whether the intended user value was achieved, using screenshots, recordings, or reproducible steps. Keep viewport, theme, preset, diagram mode, zoom, and page state comparable. Report automated or browser evidence separately from perceptual review. Non-visual changes may omit the Visual evidence section.
 
-1. The exact Archify version or commit, installation method, command, and environment.
-2. The smallest redacted typed JSON that still reproduces the failure.
-3. The complete machine-readable validation receipt or exact error.
-4. Expected versus actual behavior.
-5. A final-artifact screenshot only when the problem is visual.
+Static SVG/XML checks cannot establish browser layout, font settling, or interaction behavior. When the adaptive reader or Viewer layout changes, run the real browser test with Chrome available:
 
-Do not replace deterministic evidence with a screenshot. For visual defects, keep both the validator result and the final rendered evidence.
+```sh
+cd archify
+ARCHIFY_CHROME="/path/to/chrome" node --test test/desktop-reader-browser.test.mjs
+```
 
-## Community showcase submissions
+A browser test skipped because Chrome was unavailable is **skipped**, not passed. Follow [the delivery contract](archify/references/delivery-contract.md) for visual evidence, receipts, and failure stages. Successful validation, atomic delivery, browser checks, and perceptual review establish different claims.
 
-Showcase cases should be reproducible proof, not promotional screenshots. Submit the original prompt, agent/client, exact model, Archify version, redacted typed JSON, artifact, validation receipt, and truthful visual-review status through `.github/ISSUE_TEMPLATE/showcase.yml`.
+PR CI and tag releases run the same browser regression gate:
 
-Maintainers may ask for a smaller source file, rerun validation, or decline a case that cannot be safely published. A submission is not guaranteed inclusion. Accepted cases should preserve author attribution and must not be presented as proof of model quality without a controlled benchmark protocol.
+```sh
+cd archify
+ARCHIFY_CHROME="/path/to/chrome" npm run test:browser
+```
 
-## Pull requests
+This command requires a usable Chrome/Chromium and fails when none is available.
+Its maintained file list is in `scripts/run-browser-tests.mjs`; add new browser
+suites there so both workflows keep the same coverage. Ordinary `npm test`
+retains optional browser skips. Real WebM decoding and site-language integration
+remain in the separate `npm run test:webm` gate used by both workflows.
 
-Keep a pull request focused on one behavior or one tightly related delivery slice. Describe its non-goals, compatibility risk, failure behavior, tests, and rollback path. Preserve unrelated worktree changes and generated files.
+## Packages and generated artifacts
 
-From the repository root, regenerate only the artifacts whose sources changed:
+Viewer maintenance starts in [`viewer/`](viewer/README.md). Edit its source
+files, then run `npm run generate:viewer` from `archify/`; the delivered template
+is generated and its freshness is checked by `npm test`.
 
-```bash
+Published artifacts must be reproducible from tracked content. Use a tracked-only, symlink-safe staging path or explicit allowlist, with negative coverage for untracked files and external symlinks. Test the extracted package outside the repository on the affected advertised hosts.
+
+Review source and focused tests before regenerating artifacts. Regenerate only outputs whose authoritative inputs changed, from the final combined source:
+
+```sh
 node scripts/build-gallery.mjs docs
 node scripts/build-guide.mjs docs/guide.html
 node scripts/build-start.mjs docs/start.html
 node scripts/build-readme-showcase.mjs
-node scripts/build-zip.sh /tmp/archify-contrib.zip
+scripts/build-zip.sh /tmp/archify-contrib.zip
 ```
 
-Bundled example or viewer changes normally require the Gallery rebuild. Skill runtime, schema, renderer, or published `SKILL.md` changes require checking `archify.zip` freshness and committing a rebuilt archive when the checked-in package contents differ. Do not regenerate unrelated artifacts simply to produce a large diff.
+Canonical ZIP bytes require official Node 22 with bundled zlib `1.3.1-e00f703` (for example, the official Node 22.23.2 distribution). The builder rejects other Node majors and zlib versions before staging or replacing an archive. A distribution linked against system zlib can produce different bytes even at the same Node version; check the actual executable with `node -p 'JSON.stringify({ executable: process.execPath, node: process.versions.node, zlib: process.versions.zlib })'`. This packaging constraint does not change the Skill runtime's supported Node range. When updating the canonical toolchain, review archive reproducibility and the committed ZIP together.
 
-Before submitting:
+Skill runtime, schema, renderer, and published Skill-instruction changes require checking ZIP freshness. Bundled example or Viewer changes normally require a Gallery rebuild.
 
-```bash
-cd archify
-npm test
-```
+List regenerated files and explain freshness when an affected output is left unchanged. Changes that do not affect generated outputs may omit that PR section. Resolve generated conflicts by rebuilding from combined source. Keep unrelated generated output out of the diff.
 
-Fill in `.github/PULL_REQUEST_TEMPLATE.md` with exact commands and results. Visible changes need before/after final-artifact evidence and a truthful `passed`, `failed`, or `skipped` visual-review status.
+Treat published versions as immutable. Ordinary feature PRs do not change versions, tags, or distribution identities unless release work is explicitly in scope.
+
+## Final integration and follow-up
+
+`dev` is the integration and trial-use branch; `main` is the stable branch. Integrate reviewed changes into `dev` first. Promote a tested batch from `dev` to `main` through a separate PR after maintainers have used it on real diagram tasks and confirmed stability. Record the tested revision, usage evidence, and unresolved issues in that PR; passing CI alone does not establish trial-use acceptance. Keep Pages deployment on `main` and formal releases on version tags.
+
+Refresh the target base branch and the PR head before final integration; account for relevant base changes and resolve conflicts. Rerun local checks whose evidence was invalidated. Unchanged evidence may be linked with its original revision and reuse rationale; do not relabel it as a new-head run. Verify that required remote CI actually ran on the final head and obey branch protection; zero checks is not green.
+
+On revision, summarize what changed since the reviewed head and which findings it addresses. This lets reviewers focus on the new diff and outstanding decisions.
+
+Showcase submissions should include the prompt, agent/client, model, Archify version, redacted JSON, artifact, receipts, and truthful visual-review status. Maintainers may request a smaller safe reproduction. Preserve attribution; showcase acceptance is not a controlled model-quality benchmark.
+
+## Automated review
+
+CodeRabbit provides advisory feedback under the repository [configuration](.coderabbit.yaml). Answer with relevant evidence or explain why a finding does not apply. Missing evidence is an unresolved claim, not proof of a code defect. Maintainers settle disputed scope; required CI and the maintainer's merge decision remain separate.
+
+For retriggering or pausing reviews, use the official [review commands](https://docs.coderabbit.ai/reference/review-commands) and check the updated results. Bot assessments are snapshots at the stated revision; refresh stale checks after description or CI updates and read the latest evidence before repeating a request. Fork-CI approval requires a maintainer to inspect the proposed workflow/code changes; authors can link the waiting run.
 
 ## License
 
-By contributing, you agree that your contribution is provided under the repository's [MIT License](LICENSE). Only submit work you created or have the right to contribute.
+By contributing, you agree to the repository's [MIT License](LICENSE). Submit only work you created or have the right to contribute.
